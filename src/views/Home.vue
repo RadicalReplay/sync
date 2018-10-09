@@ -1,6 +1,6 @@
 <template>
     <div class="home">
-        <button @click="newRoom">Create a new room</button>
+        <button @click="newRoom" class="btn btn-primary">Create a new room</button>
     </div>
 </template>
 

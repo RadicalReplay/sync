@@ -1,0 +1,16 @@
+#player-window {
+    position: relative;
+    width: 640px;
+    height: 390px;
+
+    #player {
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+}
+
+#chat-window {
+    height: 400px;
+    overflow-y: scroll;
+}
