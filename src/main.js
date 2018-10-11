@@ -5,7 +5,7 @@ import io from 'socket.io-client'
 
 Vue.config.productionTip = false;
 
-window.$socket = io('192.168.72.95:3000');
+window.$socket = io(process.env.VUE_APP_SOCKET_URL);
 
 window.$player = null;
 

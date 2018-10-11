@@ -16,7 +16,7 @@
                     </div>
                     <button @click.prevent="play" class="btn btn-primary">Play</button>
                     <button @click.prevent="pause" class="btn btn-primary">Pause</button>
-                    <button @click.prevent="switchVideo" class="btn btn-primary">Switch</button>
+                    <button @click.prevent="switchVideo('IdlKt3SWck8')" class="btn btn-primary">Switch</button>
                 </div>
                 <div class="col-6">
                     <div class="card">
@@ -107,6 +107,10 @@
                     this.chat.push(message);
                 });
 
+                window.$socket.on('switch video', (videoId) => {
+                    window.$player.loadVideoById(videoId)
+                })
+
                 setTimeout(() => {
                     window.$player = new YouTubePlayer('player', {
                         height: '390',
@@ -145,8 +149,11 @@
 
                 return '-2';
             },
-            switchVideo() {
-                window.$player.loadVideoById('VwWV4JelEzY')
+            switchVideo(videoId) {
+                let vid = videoId || 'IdlKt3SWck8';
+                console.log('switching video', videoId)
+                window.$player.loadVideoById(videoId);
+                window.$socket.emit('switch video', videoId)
             },
             player() {
                 if(window.$player)
