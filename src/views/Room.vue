@@ -1,25 +1,38 @@
 <template>
     <div class="home">
-        <div class="container my-5">
-            <div class="row">
-                <div class="col-12 text-left">
+        <div class="container-fluid my-5">
+            <div class="row justify-content-center mb-5">
+                <div class="col-8 text-left">
                     <h2>Welcome to {{ room }}</h2>
                     <h5>Room is currently playing: {{ video_id }}</h5>
                 </div>
             </div>
             <div class="row">
-                <div class="col-6">
-
-
+                <div class="col-8">
                     <div id="player-window">
-                        <div id="player"></div>
+                        <vue-plyr ref="player">
+                            <div data-plyr-provider="youtube" :data-plyr-embed-id="video_id"></div>
+                        </vue-plyr>
                     </div>
-                    <button @click.prevent="play" class="btn btn-primary">Play</button>
-                    <button @click.prevent="pause" class="btn btn-primary">Pause</button>
-                    <button @click.prevent="switchVideo('IdlKt3SWck8')" class="btn btn-primary">Switch</button>
+                    <div class="row">
+                        <div class="col-6">
+
+                            <button @click.prevent="play" class="btn btn-primary">Play</button>
+                            <button @click.prevent="pause" class="btn btn-primary">Pause</button>
+                        </div>
+                        <div class="col-6">
+                            <form action="" class="form-inline w-100">
+                                <div class="form-group">
+                                    <input type="text" class="form-control" v-model="search_video_id">
+                                    <button @click.prevent="switchVideo" class="btn btn-primary">Switch
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-6">
-                    <div class="card">
+                <div class="col-4">
+                    <div class="card h-100">
                         <div class="card-body">
                             <div id="chat-window">
                                 <ul class="list-unstyled">
@@ -46,6 +59,7 @@
 <script>
 
     import YouTubePlayer from 'youtube-player'
+    import VuePlayer from 'vue-plyr'
 
     export default {
         name: 'Room',
@@ -64,7 +78,8 @@
                 },
                 readyToPlay: false,
                 chat: [],
-                chat_message: ''
+                chat_message: '',
+                search_video_id: ''
             }
         },
         created: function () {
@@ -72,6 +87,9 @@
         },
         watch: {
             '$route': 'setup'
+        },
+        mounted() {
+            this.player = this.$refs.player.player;
         },
         methods: {
             sendChatMessage() {
@@ -95,11 +113,12 @@
                 });
 
                 window.$socket.on('pause video', () => {
-                    window.$player.pauseVideo()
+                    this.player.pause()
                 });
 
                 window.$socket.on('play video', () => {
-                    window.$player.playVideo();
+                    console.log('play vid', this.player);
+                    this.player.play();
                 });
 
                 window.$socket.on('chat message', (message) => {
@@ -108,57 +127,50 @@
                 });
 
                 window.$socket.on('switch video', (videoId) => {
-                    window.$player.loadVideoById(videoId)
-                })
-
-                setTimeout(() => {
-                    window.$player = new YouTubePlayer('player', {
-                        height: '390',
-                        width: '640',
-                        videoId: this.video_id,
-                        playerVars: {
-                            'controls': 0,
-                            'showinfo': 0,
-                            'modestbranding': 1,
-                            'playsinline': 1
-                        },
-                    });
-
-                    window.$player.on('ready', (event) => {
-                        this.readyToPlay = true;
-                    })
-
-                    window.$player.on('stateChange', (event) => {
-                        this.video_state = event.data
-                    });
-                }, 1000)
+                    this.player.source = {
+                        type: 'video',
+                        sources: [
+                            {
+                                src: videoId,
+                                provider: 'youtube',
+                            },
+                        ],
+                    };
+                });
             },
             play() {
                 window.$socket.emit('play video');
-                window.$player.playVideo();
-                console.log('play video')
+                this.player.play();
             },
             pause() {
                 window.$socket.emit('pause video');
-                window.$player.pauseVideo();
-                console.log('pause video')
+                this.player.pause();
             },
             getPlayerState() {
-                if(window.$player !== null)
+                if (window.$player !== null)
                     return window.$player.getPlayerState()
 
                 return '-2';
             },
-            switchVideo(videoId) {
-                let vid = videoId || 'IdlKt3SWck8';
-                console.log('switching video', videoId)
-                window.$player.loadVideoById(videoId);
-                window.$socket.emit('switch video', videoId)
+            switchVideo() {
+                let vid1 = 'https://www.youtube.com/watch?v=Vpw7DZAjFOQ';
+                let vid2 = 'https://www.youtube.com/watch?v=IdlKt3SWck8';
+                let vid = this.search_video_id;
+
+                this.player.source = {
+                    type: 'video',
+                    sources: [
+                        {
+                            src: this.search_video_id,
+                            provider: 'youtube',
+                        },
+                    ],
+                };
+
+                window.$socket.emit('switch video', this.search_video_id);
+
+                this.search_video_id = '';
             },
-            player() {
-                if(window.$player)
-                    return window.$player;
-            }
         }
     }
 </script>
