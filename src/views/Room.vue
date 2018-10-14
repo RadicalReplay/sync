@@ -10,8 +10,9 @@
             <div class="row">
                 <div class="col-8">
                     <div id="player-window">
-                        <vue-plyr ref="player">
-                            <div data-plyr-provider="youtube" :data-plyr-embed-id="video_id"></div>
+                        <vue-plyr ref="player" :emit="['ready', 'play', 'pause']" @ready="ready" @play="play"
+                                  @pause="pause">
+                            <div data-plyr-provider="youtube"></div>
                         </vue-plyr>
                     </div>
                     <div class="row">
@@ -24,7 +25,7 @@
                             <form action="" class="form-inline w-100">
                                 <div class="form-group">
                                     <input type="text" class="form-control" v-model="search_video_id">
-                                    <button @click.prevent="switchVideo" class="btn btn-primary">Switch
+                                    <button @click.prevent="switchVideo(null)" class="btn btn-primary">Switch
                                     </button>
                                 </div>
                             </form>
@@ -58,8 +59,7 @@
 
 <script>
 
-    import YouTubePlayer from 'youtube-player'
-    import VuePlayer from 'vue-plyr'
+    import VuePlyr from 'vue-plyr'
 
     export default {
         name: 'Room',
@@ -79,14 +79,22 @@
                 readyToPlay: false,
                 chat: [],
                 chat_message: '',
-                search_video_id: ''
+                search_video_id: 'IdlKt3SWck8',
+                playerInit: false,
             }
         },
         created: function () {
             this.setup();
         },
         watch: {
-            '$route': 'setup'
+            '$route': 'setup',
+            playerInit: function(val) {
+                console.log(val, this.video_id);
+                if(val === true)
+                {
+                    this.loadVideo(this.video_id);
+                }
+            }
         },
         mounted() {
             this.player = this.$refs.player.player;
@@ -104,9 +112,11 @@
 
             setup() {
 
-                console.log(this.$root.$route.params);
+                window.$socket.on('load room', (room) => {
+                    if(!room) this.$router.push({name: 'home'});
 
-                window.$socket.emit('join room', this.$root.$route.params);
+                    this.video_id = room.currentVideo;
+                });
 
                 window.$socket.on('room closed', () => {
                     this.$root.$router.push('/')
@@ -127,16 +137,11 @@
                 });
 
                 window.$socket.on('switch video', (videoId) => {
-                    this.player.source = {
-                        type: 'video',
-                        sources: [
-                            {
-                                src: videoId,
-                                provider: 'youtube',
-                            },
-                        ],
-                    };
+                    console.log('switching video', videoId)
+                    this.loadVideo(videoId);
                 });
+
+                window.$socket.emit('join room', this.$root.$route.params);
             },
             play() {
                 window.$socket.emit('play video');
@@ -152,25 +157,38 @@
 
                 return '-2';
             },
-            switchVideo() {
+            switchVideo(vid = null) {
                 let vid1 = 'https://www.youtube.com/watch?v=Vpw7DZAjFOQ';
                 let vid2 = 'https://www.youtube.com/watch?v=IdlKt3SWck8';
-                let vid = this.search_video_id;
+                let videoId = vid || this.search_video_id;
 
-                this.player.source = {
-                    type: 'video',
-                    sources: [
-                        {
-                            src: this.search_video_id,
-                            provider: 'youtube',
-                        },
-                    ],
-                };
+                console.log('switching to ', videoId, this.search_video_id)
+
+
+                this.loadVideo(videoId);
+
+                console.log('playaya load', this.player);
 
                 window.$socket.emit('switch video', this.search_video_id);
 
                 this.search_video_id = '';
             },
+
+            ready() {
+                this.playerInit = true;
+            },
+
+            loadVideo(id) {
+                this.player.source = {
+                    type: 'video',
+                    sources: [
+                        {
+                            src: id,
+                            provider: 'youtube',
+                        },
+                    ],
+                };
+            }
         }
     }
 </script>
