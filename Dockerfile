@@ -8,9 +8,3 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get -y --no-install-recommends install  php-memcached php7.2-mysql php-redis \
     && apt-get clean; rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
-    
-# Install dependencies
-    yarn install
-    yarn run serve
-    yarn run build
-    yarn run lint
